@@ -66,7 +66,8 @@ contributed-tasks/
     ├── metadata.json         # Task metadata (required)
     ├── Dockerfile            # Container setup (optional)
     ├── docker-compose.yaml   # Docker config (optional)
-    └── assets/               # Additional files (optional)
+    └── assets/               # Resource URLs or files (optional)
+        └── urls.txt          # URLs to download files
 ```
 
 **After encryption (ready for PR):**
@@ -79,7 +80,8 @@ contributed-tasks/
     ├── metadata.json.enc     # Encrypted metadata
     ├── canary.txt            # Encryption key
     ├── Dockerfile            # (unchanged)
-    └── assets/               # (unchanged)
+    ├── docker-compose.yaml   # (unchanged)
+    └── assets/               # (unchanged, e.g., urls.txt)
 ```
 
 ---
@@ -237,16 +239,8 @@ This file contains **only** the task prompt. It should be ready to send directly
 **Template:**
 
 ```markdown
-[Context and background - set the scene for the task]
-
-**Requirements:**
-- Requirement 1
-- Requirement 2
-- Requirement 3
-
-**Task:**
-
-[Clear description of what needs to be done]
+[Task description - clearly explain what the agent should do, 
+including all necessary context and constraints]
 
 **Output Format:**
 
@@ -255,10 +249,6 @@ Submit your answer in the following format:
 \`\`\`
 <answer>your_answer_here</answer>
 \`\`\`
-
-**Example:** `<answer>Example Value</answer>`
-
-[Explain what format the answer should be in]
 ```
 
 ---
@@ -274,7 +264,7 @@ Contains the expected answer and initialization resources.
 
 ## Initialization
 
-[Required resources: image URLs, web pages, files, or "None"]
+[Required resources: "Local: assets/", "Host UI: url", or "None"]
 
 ## Evaluation Criteria
 
@@ -282,7 +272,7 @@ Contains the expected answer and initialization resources.
 
 ## Agent Output Example
 
-[Sample agent performance after testing]
+[To be filled after agent testing]
 ```
 
 **⚠️ Evaluation Criteria Rule:**
@@ -301,7 +291,7 @@ The evaluation criteria should ideally be a **simple string or number** that can
 | Image file | `Image: https://drive.google.com/file/d/...` |
 | Web UI | `Host UI: https://example.com/page` |
 | Google Drive folder | `Folder: https://drive.google.com/drive/folders/...` |
-| Local files | `Local: meetingSchedule/` |
+| Local files | `Local: assets/` |
 | None needed | `None` or `None (web browsing only)` |
 
 **Multiple Resources:**
@@ -339,18 +329,11 @@ Documents how a human would solve the task step-by-step.
 ```markdown
 # Solution
 
-### Step 1: [Action Name]
-1. [Sub-step 1]
-2. [Sub-step 2]
-
-### Step 2: [Action Name]
-[Detailed explanation with intermediate results]
-
-### Step 3: [Action Name]
-[Continue with clear reasoning]
+### Step 1: [Step Title]
+[Detailed explanation with sub-steps if needed]
 
 ### Final Answer
-[State the answer clearly]
+[The correct answer]
 ```
 
 ---
