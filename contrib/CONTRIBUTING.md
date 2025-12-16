@@ -288,12 +288,12 @@ Chat transcript: [link to chat]
 
 **⚠️ Evaluation Criteria Rule:**
 
-The evaluation criteria should ideally be a **simple string or number** that can be directly matched against agent output. This enables automatic evaluation without complex scripts.
+The final output of an agent should be easy to evaluate programmatically, ideally as a **simple string or number** that can be verified using a lightweight Python script. This enables reliable automatic evaluation without requiring complex verification logic.
 
-- ✅ Good: `Jason Wei, 9` or `$56.36` or `London`
-- ✅ Good: Numeric with tolerance: `2.8 (±0.1)`
-- ❌ Avoid: Complex prose descriptions that require human judgment
-- ❌ Avoid: Tasks that need complex evaluation scripts to verify correctness
+- ✅ Good: `$52.10` or `London` or `{"a": 1, "b": 3}`
+- ✅ Good: Numeric with tolerance or string with fuzzy match: `2.8 (±0.1)`
+- ❌ Avoid: Open-ended output that require human evaluation
+- ❌ Avoid: Tasks that need a very complex evaluation scripts to verify correctness
 
 **Initialization Types:**
 
