@@ -1074,22 +1074,30 @@ class UnifiedSandboxClient(SandboxClient):
             code = action.get("code")
             if not code:
                 raise ValueError("code_execute requires 'code' parameter")
-            result = self.sdk_client.jupyter.execute_code(
+            language = action.get("language", "python")
+            timeout = action.get("timeout")
+
+            result = self.sdk_client.code.execute_code(
+                language=language,
                 code=code,
-                session_id=self.jupyter_session_id,
-                kernel_name="python3"
+                timeout=timeout,
             )
 
-            # Extract outputs
-            outputs = []
-            for output in result.data.outputs:
-                if hasattr(output, 'text') and output.text:
-                    outputs.append(output.text)
-                elif hasattr(output, 'data') and output.data:
-                    outputs.append(str(output.data))
-            
-            message = "\n".join(outputs) if outputs else "Code executed successfully (no output)"
-            
+            # result.data is CodeExecuteResponse
+            data = result.data
+            parts = []
+            if data.stdout:
+                parts.append(data.stdout.rstrip())
+            if data.stderr:
+                parts.append(f"[stderr]\n{data.stderr.rstrip()}")
+            if data.outputs:
+                try:
+                    parts.append(json.dumps(data.outputs, indent=2))
+                except Exception:
+                    parts.append(str(data.outputs))
+
+            message = "\n".join([p for p in parts if p]) or f"Code executed: status={data.status}"
+
             feedback = {"done": False, "message": message}
             self.execution_history.append({"action": action, "feedback": feedback})
             logger.debug(f"Feedback (OBSERVATION): \n{colorize(json.dumps(feedback, indent=2), 'YELLOW')}")

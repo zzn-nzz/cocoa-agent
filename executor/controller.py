@@ -98,7 +98,7 @@ You have access to these tool categories:
 - str_replace_editor: Powerful file editing with view/create/replace/insert/undo
 
 **Code Execution Tools:**
-- code_execute: Run Python code in Jupyter kernel with persistent state
+- code_execute: Run code via sandbox runtime (python default); returns stdout/stderr
 
 **Shell Tools:**
 - shell_execute: Execute bash commands in the sandbox
@@ -229,7 +229,7 @@ Task:
 - `str_replace_editor(command, path, ...)`: Powerful file editing with view/create/replace/insert/undo
 
 ### Code Execution Tools
-- `code_execute(code)`: Run Python code in Jupyter kernel with persistent state
+- `code_execute(code, language?, timeout?)`: Run code via sandbox runtime (python default); returns stdout/stderr
 
 ### Shell Tools
 - `shell_execute(command)`: Execute bash commands in the sandbox

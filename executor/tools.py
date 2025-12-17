@@ -715,13 +715,22 @@ def get_code_tools() -> List[Dict[str, Any]]:
             "type": "function",
             "function": {
                 "name": "code_execute",
-                "description": "Execute Python code in Jupyter kernel and get results",
+                "description": "Execute code via sandbox runtime (python default). Returns stdout/stderr.",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "code": {
                             "type": "string",
-                            "description": "Python code to execute"
+                            "description": "Source code to execute"
+                        },
+                        "language": {
+                            "type": "string",
+                            "enum": ["python", "javascript"],
+                            "description": "Runtime language (default python)"
+                        },
+                        "timeout": {
+                            "type": "integer",
+                            "description": "Optional timeout in seconds"
                         }
                     },
                     "required": ["code"]
@@ -870,7 +879,7 @@ def map_tool_call_to_action(tool_name: str, arguments: Dict[str, Any]) -> Dict[s
         "file_download": {"path"},
         "image_read": {"path"},
         "str_replace_editor": {"command", "path", "file_text", "old_str", "new_str", "insert_line", "view_range"},
-        "code_execute": {"code"},
+        "code_execute": {"code", "language", "timeout"},
         "shell_execute": {"command"},
         "task_complete": {"result"},
     }
