@@ -364,6 +364,15 @@ class BrowserSandboxClient(SandboxClient):
             logger.error(f"Failed to take screenshot: {e}")
             return "", f"Failed to take screenshot: {str(e)}"
     
+    def take_screenshot(self) -> tuple[str, str]:
+        """Public method to take a screenshot for visualization.
+        
+        Returns:
+            Tuple of (base64_encoded_image, status_message)
+        """
+        self._initialize_sdk_client()
+        return self._take_screenshot()
+    
     def _get_browser_info(self) -> str:
         """Get browser information including CDP URL and viewport.
         
@@ -936,6 +945,27 @@ class UnifiedSandboxClient(SandboxClient):
             feedback = {"done": False, "message": f"Error: {str(e)}"}
             self.execution_history.append({"action": action, "feedback": feedback})
             return feedback
+    
+    def take_screenshot(self) -> tuple[str, str]:
+        """Take a screenshot and return base64 encoded string and status message.
+        
+        Returns:
+            Tuple of (base64_encoded_image, status_message)
+        """
+        self._initialize_sdk_client()
+        try:
+            import base64
+            screenshot_data = b""
+            for chunk in self.sdk_client.browser.screenshot():
+                screenshot_data += chunk
+            
+            # Encode to base64
+            base64_image = base64.b64encode(screenshot_data).decode('utf-8')
+            status_message = f"Screenshot taken successfully ({len(screenshot_data)} bytes)"
+            return base64_image, status_message
+        except Exception as e:
+            logger.error(f"Failed to take screenshot: {e}")
+            return "", f"Failed to take screenshot: {str(e)}"
     
     def _handle_browser_action(self, action: Dict[str, Any]) -> Dict[str, Any]:
         """Handle browser-specific actions."""

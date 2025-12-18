@@ -416,6 +416,7 @@ class LLM(Controller):
 
         self.client = OpenAI(**client_kwargs)
         self.messages: List[Dict[str, str]] = []
+        self.last_think: str | None = None  # Store the last think/reasoning content for visualization
         
         # Store client type and determine tool usage
         self.client_type = client_type
@@ -539,6 +540,15 @@ class LLM(Controller):
                 if self.use_tools and assistant_message and (has_tool_call_pattern or self.is_qwen_model):
                     tool_calls = self.parse_text_tool_calls(assistant_message)
                     if tool_calls:
+                        # Save think content (extract reasoning before tool calls) for visualization
+                        # For Qwen, the think content is usually before <tool_call> tags
+                        if "<tool_call>" in assistant_message:
+                            think_part = assistant_message.split("<tool_call>")[0].strip()
+                            self.last_think = think_part if think_part else None
+                        else:
+                            # For Qwen without tags, try to extract reasoning (content before tool calls)
+                            self.last_think = assistant_message  # Use full content as think for now
+                        
                         self.messages.append({"role": "assistant", "content": assistant_message})
                         
                         model_name = "Qwen3-VL" if has_tool_call_pattern else "Qwen"
@@ -569,6 +579,9 @@ class LLM(Controller):
                 
                 # Handle tool calling response (OpenAI format)
                 if self.use_tools and hasattr(message, 'tool_calls') and message.tool_calls:
+                    # Save think content (reasoning before action) for visualization
+                    self.last_think = message.content if message.content else None
+                    
                     self.messages.append({
                         "role": "assistant",
                         "content": message.content,
@@ -620,6 +633,8 @@ class LLM(Controller):
                         continue
                 else:
                     # Regular text response (non-tool calling mode or no tools called)
+                    # Save think content for visualization
+                    self.last_think = assistant_message
                     self.messages.append({"role": "assistant", "content": assistant_message})
 
                     logger.debug(f"Received response from {self.model} (length: {len(assistant_message)} chars)")
@@ -945,6 +960,15 @@ class LLM(Controller):
         """Clear the message history."""
         logger.debug(f"Clearing message history ({len(self.messages)} messages removed)")
         self.messages = []
+        self.last_think = None
+    
+    def get_last_think(self) -> str | None:
+        """Get the last think/reasoning content for visualization.
+        
+        Returns:
+            The last think content string, or None if not available
+        """
+        return self.last_think
 
     def add_tool_message(self, tool_call_id: str, content: str) -> None:
         """Append tool call results to the conversation history for OpenAI tool-calling compliance."""
