@@ -43,6 +43,10 @@ class VisualizationHandler(SimpleHTTPRequestHandler):
                 # Extract visualization_data from result
                 visualization_data = data.get("visualization_data", {})
                 
+                # Add eval data if available
+                if "eval" in data:
+                    visualization_data["eval"] = data["eval"]
+                
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
                 self.send_header("Access-Control-Allow-Origin", "*")

@@ -427,21 +427,25 @@
             }
         }
 
-        // Calculate total steps
+        // Calculate total steps (excluding think steps since we don't show them in right panel)
         function calculateTotalSteps(data) {
             let steps = 0;
             if (data.iterations) {
                 data.iterations.forEach(iter => {
-                    if (iter.think) steps++;
+                    // Don't count think steps - we skip them in right panel
                     if (iter.actions) {
                         iter.actions.forEach(() => steps++);
                     }
                 });
             }
+            // Add eval step if available
+            if (data.eval) {
+                steps++;
+            }
             return steps;
         }
 
-        // Get step data by index
+        // Get step data by index (skipping think steps)
         function getStepData(step) {
             if (!visualizationData || !visualizationData.iterations) return null;
             
@@ -449,11 +453,7 @@
             for (let iterIdx = 0; iterIdx < visualizationData.iterations.length; iterIdx++) {
                 const iter = visualizationData.iterations[iterIdx];
                 
-                // Check if this step is the think
-                if (iter.think && current === step) {
-                    return { type: 'think', iterIdx, iter, actionIdx: null, actionData: null };
-                }
-                if (iter.think) current++;
+                // Skip think steps - we don't show them in right panel
                 
                 // Check actions
                 if (iter.actions) {
@@ -465,6 +465,12 @@
                     }
                 }
             }
+            
+            // Check if this is the eval step
+            if (visualizationData.eval && current === step) {
+                return { type: 'eval', eval: visualizationData.eval };
+            }
+            
             return null;
         }
 
@@ -492,20 +498,17 @@
                 const iter = visualizationData.iterations[iterIdx];
                 let iterationStarted = false;
                 
-                // Render think if it exists and we've reached that step
+                // Render think if it exists (always show think in left panel)
                 if (iter.think) {
-                    if (stepCount <= currentStep) {
-                        if (!iterationStarted) {
-                            html += `<div class="iteration-block" data-iteration="${iterIdx}">`;
-                            html += `<div class="iteration-header">Iteration ${iter.iteration}</div>`;
-                            iterationStarted = true;
-                        }
-                        html += `<div class="think-block">`;
-                        html += `<div class="think-label">Thought</div>`;
-                        html += `<div class="think-content">${escapeHtml(iter.think)}</div>`;
-                        html += `</div>`;
+                    if (!iterationStarted) {
+                        html += `<div class="iteration-block" data-iteration="${iterIdx}">`;
+                        html += `<div class="iteration-header">Iteration ${iter.iteration}</div>`;
+                        iterationStarted = true;
                     }
-                    stepCount++;
+                    html += `<div class="think-block">`;
+                    html += `<div class="think-label">Thought</div>`;
+                    html += `<div class="think-content">${escapeHtml(iter.think)}</div>`;
+                    html += `</div>`;
                 }
 
                 // Render actions if we've reached those steps
@@ -543,6 +546,17 @@
                 if (iterationStarted) {
                     html += `</div>`;
                 }
+            }
+
+            // Add eval block if available and we've reached the end
+            if (visualizationData.eval && currentStep >= totalSteps - 1) {
+                html += `<div class="iteration-block" style="border-color: ${visualizationData.eval.passed ? '#10b981' : '#f59e0b'};" data-eval="true">`;
+                html += `<div class="iteration-header" style="color: ${visualizationData.eval.passed ? '#10b981' : '#f59e0b'};">Evaluation ${visualizationData.eval.passed ? '✓ PASSED' : '✗ FAILED'}</div>`;
+                html += `<div class="observation-block">`;
+                html += `<div class="observation-label">Result</div>`;
+                html += `<div class="observation-content">${escapeHtml(visualizationData.eval.feedback || 'Evaluation completed')}</div>`;
+                html += `</div>`;
+                html += `</div>`;
             }
 
             container.innerHTML = html || '<div class="empty-state">No steps to display</div>';
@@ -667,6 +681,8 @@
                     navigateToStep(currentStep);
                 } else {
                     stopPlayback();
+                    // Ensure we show the last step (eval if available)
+                    navigateToStep(currentStep);
                 }
             }, delay);
         }
@@ -694,32 +710,192 @@
             const viewer = document.getElementById('contentViewer');
             const header = document.getElementById('contentHeader');
 
-            if (stepData.type === 'action' && stepData.actionData) {
+            if (stepData.type === 'eval') {
+                // Show eval results
+                header.textContent = 'Evaluation Results';
+                viewer.innerHTML = renderEvalContent(stepData.eval);
+            } else if (stepData.type === 'action' && stepData.actionData) {
                 const action = stepData.actionData.action || {};
                 const actionType = action.action_type || 'unknown';
 
                 header.textContent = `${actionType} - Iteration ${stepData.iter.iteration}`;
-
-                let content = '';
-
-                // Show screenshot if available
-                if (stepData.actionData.screenshot) {
-                    content += `<img src="data:image/png;base64,${stepData.actionData.screenshot}" alt="Screenshot">`;
-                }
-
-                // Show action details
-                content += `<pre>${escapeHtml(JSON.stringify(action, null, 2))}</pre>`;
-
-                // Show observation
-                if (stepData.actionData.observation) {
-                    content += `<div class="file-content">${escapeHtml(stepData.actionData.observation)}</div>`;
-                }
-
-                viewer.innerHTML = content;
-            } else if (stepData.type === 'think' && stepData.iter.think) {
-                header.textContent = `Thought - Iteration ${stepData.iter.iteration}`;
-                viewer.innerHTML = `<div class="file-content">${escapeHtml(stepData.iter.think)}</div>`;
+                viewer.innerHTML = renderActionContent(action, stepData.actionData);
             }
+        }
+
+        // Render action content with better formatting
+        function renderActionContent(action, actionData) {
+            const actionType = action.action_type || 'unknown';
+            let content = '';
+
+            // Browser actions: show screenshot prominently
+            if (actionType.includes('browser') || ['CLICK', 'TYPING', 'NAVIGATE', 'screenshot', 'DOM_CLICK', 'DOM_GET_TEXT'].includes(actionType)) {
+                if (actionData.screenshot) {
+                    content += `<div style="margin-bottom: 16px;"><img src="data:image/png;base64,${actionData.screenshot}" alt="Screenshot" style="max-width: 100%; border-radius: 8px; border: 1px solid #30363d;"></div>`;
+                }
+            }
+
+            // Code execution: show formatted code and results
+            if (actionType === 'code_execute') {
+                const code = action.code || '';
+                const observation = actionData.observation || '';
+                
+                // Extract code and results from observation
+                content += `<div class="code-execution-viewer">`;
+                content += `<div class="code-section">`;
+                content += `<div style="background: #161b22; padding: 12px; border-bottom: 1px solid #30363d; font-size: 11px; color: #8b949e; font-weight: 600;">CODE</div>`;
+                content += `<pre style="margin: 0; padding: 16px; background: #0d1117; border-radius: 0 0 8px 8px; overflow-x: auto;"><code class="language-python">${escapeHtml(code)}</code></pre>`;
+                content += `</div>`;
+                
+                // Parse and display execution results
+                if (observation) {
+                    content += `<div class="result-section" style="margin-top: 16px;">`;
+                    content += `<div style="background: #161b22; padding: 12px; border-bottom: 1px solid #30363d; font-size: 11px; color: #8b949e; font-weight: 600;">OUTPUT</div>`;
+                    content += `<div class="terminal-output" style="padding: 16px; background: #0d1117; border-radius: 0 0 8px 8px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; white-space: pre-wrap; color: #c9d1d9;">${formatCodeOutput(observation)}</div>`;
+                    content += `</div>`;
+                }
+                content += `</div>`;
+            }
+            // Shell execution: show terminal-style output
+            else if (actionType === 'shell_execute') {
+                const command = action.command || '';
+                const observation = actionData.observation || '';
+                
+                content += `<div class="terminal-viewer">`;
+                content += `<div style="background: #161b22; padding: 12px; border-bottom: 1px solid #30363d; font-size: 11px; color: #8b949e; font-weight: 600;">TERMINAL</div>`;
+                content += `<div class="terminal-output" style="padding: 16px; background: #0d1117; border-radius: 0 0 8px 8px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; white-space: pre-wrap;">`;
+                content += `<span style="color: #58a6ff;">$</span> <span style="color: #c9d1d9;">${escapeHtml(command)}</span>\n`;
+                if (observation) {
+                    content += formatCodeOutput(observation);
+                }
+                content += `</div>`;
+                content += `</div>`;
+            }
+            // File operations: show formatted content
+            else if (actionType === 'file_read') {
+                const path = action.path || action.file || '';
+                const observation = actionData.observation || '';
+                
+                content += `<div class="file-viewer">`;
+                content += `<div style="background: #161b22; padding: 12px; border-bottom: 1px solid #30363d; font-size: 11px; color: #8b949e; font-weight: 600;">FILE: ${escapeHtml(path)}</div>`;
+                content += `<div class="file-content" style="padding: 16px; background: #0d1117; border-radius: 0 0 8px 8px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; white-space: pre-wrap; max-height: 600px; overflow-y: auto;">${escapeHtml(observation)}</div>`;
+                content += `</div>`;
+            }
+            // Other actions: show JSON format
+            else {
+                if (actionData.screenshot) {
+                    content += `<div style="margin-bottom: 16px;"><img src="data:image/png;base64,${actionData.screenshot}" alt="Screenshot" style="max-width: 100%; border-radius: 8px; border: 1px solid #30363d;"></div>`;
+                }
+                content += `<div class="action-details">`;
+                content += `<div style="background: #161b22; padding: 12px; border-bottom: 1px solid #30363d; font-size: 11px; color: #8b949e; font-weight: 600;">ACTION</div>`;
+                content += `<pre style="margin: 0; padding: 16px; background: #0d1117; border-radius: 0 0 8px 8px; overflow-x: auto;">${escapeHtml(JSON.stringify(action, null, 2))}</pre>`;
+                content += `</div>`;
+                
+                if (actionData.observation) {
+                    content += `<div class="observation-details" style="margin-top: 16px;">`;
+                    content += `<div style="background: #161b22; padding: 12px; border-bottom: 1px solid #30363d; font-size: 11px; color: #8b949e; font-weight: 600;">OBSERVATION</div>`;
+                    content += `<div class="file-content" style="padding: 16px; background: #0d1117; border-radius: 0 0 8px 8px; white-space: pre-wrap;">${escapeHtml(actionData.observation)}</div>`;
+                    content += `</div>`;
+                }
+            }
+
+            return content;
+        }
+
+        // Format code execution output (remove JSON formatting, show as terminal output)
+        function formatCodeOutput(observation) {
+            // Try to parse JSON output and extract meaningful content
+            try {
+                // Check if observation contains JSON array (like Jupyter output)
+                if (observation.includes('[{') || observation.includes('"output_type"')) {
+                    // Try to parse as JSON array
+                    const jsonMatch = observation.match(/\[[\s\S]*\]/);
+                    if (jsonMatch) {
+                        const outputs = JSON.parse(jsonMatch[0]);
+                        let formatted = '';
+                        outputs.forEach(output => {
+                            if (output.output_type === 'stream') {
+                                formatted += output.text || '';
+                            } else if (output.output_type === 'execute_result' || output.output_type === 'display_data') {
+                                formatted += output.data?.['text/plain'] || output.data?.['text/html'] || output.text || '';
+                            } else if (output.output_type === 'error') {
+                                formatted += `\x1b[31m${output.ename}: ${output.evalue}\x1b[0m\n`;
+                                if (output.traceback) {
+                                    output.traceback.forEach(line => {
+                                        formatted += line.replace(/\x1b\[[0-9;]*m/g, '') + '\n';
+                                    });
+                                }
+                            }
+                        });
+                        return escapeHtml(formatted);
+                    }
+                }
+            } catch (e) {
+                // If parsing fails, return original
+            }
+            
+            // Return original observation with ANSI color codes preserved
+            return escapeHtml(observation);
+        }
+
+        // Render eval content
+        function renderEvalContent(evalData) {
+            let content = '';
+            
+            const passed = evalData.passed || false;
+            const statusColor = passed ? '#10b981' : '#f59e0b';
+            const statusText = passed ? '✓ PASSED' : '✗ FAILED';
+            
+            content += `<div class="eval-viewer">`;
+            content += `<div style="background: ${statusColor}; padding: 16px; border-radius: 8px 8px 0 0; color: white; font-weight: 600; font-size: 14px;">${statusText}</div>`;
+            
+            if (evalData.feedback) {
+                content += `<div style="background: #161b22; padding: 16px; border-bottom: 1px solid #30363d;">`;
+                content += `<div style="font-size: 11px; color: #8b949e; font-weight: 600; margin-bottom: 8px;">FEEDBACK</div>`;
+                content += `<div style="white-space: pre-wrap; color: #c9d1d9;">${escapeHtml(evalData.feedback)}</div>`;
+                content += `</div>`;
+            }
+            
+            if (evalData.details) {
+                content += `<div style="background: #161b22; padding: 16px;">`;
+                content += `<div style="font-size: 11px; color: #8b949e; font-weight: 600; margin-bottom: 8px;">DETAILS</div>`;
+                
+                // Show output_json if available
+                if (evalData.details.output_json) {
+                    content += `<div style="margin-bottom: 12px;">`;
+                    content += `<div style="font-size: 11px; color: #58a6ff; margin-bottom: 4px;">Output JSON:</div>`;
+                    content += `<pre style="background: #0d1117; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 0;">${escapeHtml(JSON.stringify(evalData.details.output_json, null, 2))}</pre>`;
+                    content += `</div>`;
+                }
+                
+                // Show expected values if available
+                if (evalData.details.expected_regime_count !== undefined || evalData.details.expected_breakpoints) {
+                    content += `<div style="margin-bottom: 12px;">`;
+                    content += `<div style="font-size: 11px; color: #58a6ff; margin-bottom: 4px;">Expected:</div>`;
+                    if (evalData.details.expected_regime_count !== undefined) {
+                        content += `<div style="color: #c9d1d9;">Regime Count: ${evalData.details.expected_regime_count}</div>`;
+                    }
+                    if (evalData.details.expected_breakpoints) {
+                        content += `<div style="color: #c9d1d9;">Breakpoints: ${JSON.stringify(evalData.details.expected_breakpoints)}</div>`;
+                    }
+                    content += `</div>`;
+                }
+                
+                // Show other details as JSON
+                const detailsCopy = { ...evalData.details };
+                delete detailsCopy.output_json;
+                delete detailsCopy.expected_regime_count;
+                delete detailsCopy.expected_breakpoints;
+                
+                if (Object.keys(detailsCopy).length > 0) {
+                    content += `<pre style="background: #0d1117; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 0; font-size: 11px;">${escapeHtml(JSON.stringify(detailsCopy, null, 2))}</pre>`;
+                }
+                
+                content += `</div>`;
+            }
+            
+            content += `</div>`;
+            return content;
         }
 
         // File selector
