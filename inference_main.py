@@ -12,7 +12,7 @@ import yaml
 
 from executor import TaskExecutor
 from executor.utils import setup_logging, load_config, get_logger
-from decrypt_utils import decrypt_file_to_memory, read_canary
+from decrypt import decrypt_file_to_memory, read_canary
 
 
 def parse_arguments() -> dict:

@@ -3,7 +3,7 @@
 Encrypt task.yaml and test.py files in place for all tasks in a directory.
 
 Usage:
-    python encrypt_tasks.py --tasks-dir releasing-tasks/
+    python encrypt.py --tasks-dir releasing-tasks/
     
 This will:
 - Encrypt task.yaml -> task.yaml.enc (and remove task.yaml)
