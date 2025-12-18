@@ -532,52 +532,24 @@ class LLM(Controller):
 
                 message = response.choices[0].message
                 
-                # Handle Qwen3 model special format (text-based tool calls)
+                # Handle Qwen model special format (text-based tool calls)
                 assistant_message = message.content if message.content else ""
-                if self.use_tools and assistant_message and ("<tool_call>" in assistant_message or "</tool_call>" in assistant_message):
+                # Check for tool calls either by content pattern or model type
+                has_tool_call_pattern = ("<tool_call>" in assistant_message or "</tool_call>" in assistant_message)
+                if self.use_tools and assistant_message and (has_tool_call_pattern or self.is_qwen_model):
                     tool_calls = self.parse_text_tool_calls(assistant_message)
                     if tool_calls:
                         self.messages.append({"role": "assistant", "content": assistant_message})
                         
-                        logger.debug(f"Parsed {len(tool_calls)} tool calls from Qwen3-VL model")
+                        model_name = "Qwen3-VL" if has_tool_call_pattern else "Qwen"
+                        logger.debug(f"Parsed {len(tool_calls)} tool calls from {model_name} model")
                         
                         try:
                             parsed_response = self.parse_tool_calls_list(tool_calls)
                             logger.debug(f"Parsed tool calls (ACTION): \n{colorize(json.dumps(parsed_response, indent=2), 'YELLOW')}")
                             return parsed_response
                         except ValueError as parse_error:
-                            logger.warning(f"Failed to parse Qwen3-VL tool calls (attempt {attempt}/{max_attempts}): {parse_error}")
-                            if attempt >= max_attempts:
-                                return {
-                                    "action_type": "error",
-                                    "error_message": str(parse_error),
-                                    "tool_calls": tool_calls
-                                }
-                            error_message = (
-                                f"Error parsing tool calls: {str(parse_error)}\n"
-                                f"Please check the tool parameters and try again. "
-                                f"Make sure you only use the parameters documented for each tool."
-                            )
-                            self.messages.append({
-                                "role": "user",
-                                "content": error_message
-                            })
-                            continue
-                
-                # Handle Qwen model format if flagged
-                if self.use_tools and self.is_qwen_model and assistant_message:
-                    tool_calls = self.parse_text_tool_calls(assistant_message)
-                    if tool_calls:
-                        self.messages.append({"role": "assistant", "content": assistant_message})
-                        
-                        logger.debug(f"Parsed {len(tool_calls)} tool calls from Qwen model")
-                        
-                        try:
-                            parsed_response = self.parse_tool_calls_list(tool_calls)
-                            logger.debug(f"Parsed tool calls (ACTION): \n{colorize(json.dumps(parsed_response, indent=2), 'YELLOW')}")
-                            return parsed_response
-                        except ValueError as parse_error:
-                            logger.warning(f"Failed to parse Qwen tool calls (attempt {attempt}/{max_attempts}): {parse_error}")
+                            logger.warning(f"Failed to parse {model_name} tool calls (attempt {attempt}/{max_attempts}): {parse_error}")
                             if attempt >= max_attempts:
                                 return {
                                     "action_type": "error",
