@@ -51,10 +51,10 @@ def is_browser_action(action: Dict[str, Any]) -> bool:
     browser_action_types = [
         "browser_click", "browser_type", "browser_press", "browser_key_down", "browser_key_up", "browser_hotkey",
         "browser_scroll", "browser_move_to", "browser_move_rel", "browser_drag_to", "browser_drag_rel",
-        "browser_wait", "browser_double_click", "browser_right_click",
+        "browser_wait",
         "dom_get_text", "dom_get_html", "dom_query_selector",
         "dom_extract_links", "dom_click", "browser_navigate",
-        "browser_screenshot", "browser_get_info",
+        "browser_screenshot", "browser_get_viewport_info",
     ]
     return action_type in browser_action_types
 
@@ -362,6 +362,10 @@ class TaskExecutor:
         # Add task_result if it was provided in task_complete
         if task_result:
             result_dict["task_result"] = task_result
+        
+        # Add API cost statistics if controller supports it
+        if hasattr(self.controller, "get_cost_stats"):
+            result_dict["api_cost_stats"] = self.controller.get_cost_stats()
         
         return result_dict
 

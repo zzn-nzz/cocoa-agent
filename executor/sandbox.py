@@ -331,16 +331,6 @@ class BrowserSandboxClient(SandboxClient):
             )
         elif action_type == "browser_wait":
             return Action_Wait(duration=action_data.get("duration"))
-        elif action_type == "browser_double_click":
-            return Action_DoubleClick(
-                x=action_data.get("x"),
-                y=action_data.get("y")
-            )
-        elif action_type == "browser_right_click":
-            return Action_RightClick(
-                x=action_data.get("x"),
-                y=action_data.get("y")
-            )
         else:
             raise ValueError(f"Unsupported action type: {action_type}")
 
@@ -769,8 +759,8 @@ class BrowserSandboxClient(SandboxClient):
             logger.debug(f"Feedback (OBSERVATION): \n{colorize(json.dumps({**feedback, 'image_base64': f'<{len(base64_image)} bytes>' if base64_image else None}, indent=2), 'YELLOW')}")
             return feedback
 
-        # Handle get_info action
-        if action.get("action_type") == "browser_get_info":
+        # Handle get_viewport_info action
+        if action.get("action_type") == "browser_get_viewport_info":
             message = self._get_browser_info()
             feedback = {
                 "done": False,
@@ -912,18 +902,17 @@ class UnifiedSandboxClient(SandboxClient):
             # Browser actions
             if action_type in ["browser_click", "browser_type", "browser_press", "browser_key_down", "browser_key_up", "browser_hotkey",
                               "browser_scroll", "browser_move_to", "browser_move_rel", "browser_drag_to", "browser_drag_rel",
-                              "browser_wait", "browser_double_click", "browser_right_click",
+                              "browser_wait",
                               "dom_get_text", "dom_get_html", "dom_query_selector",
                               "dom_extract_links", "dom_click", "browser_navigate",
-                              "browser_screenshot", "browser_get_info",
+                              "browser_screenshot", "browser_get_viewport_info",
                               ]:
                 return self._handle_browser_action(action)
             
             # File actions
             elif action_type in ["file_read", "file_write", "file_list",
                                "replace_in_file", "search_in_file", "find_files", 
-                               "file_upload", "file_download", "str_replace_editor",
-                               "image_read"]:
+                               "str_replace_editor", "image_read"]:
                 return self._handle_file_action(action)
             
             # Code actions
@@ -1059,30 +1048,6 @@ class UnifiedSandboxClient(SandboxClient):
                 files = result.data.files if result.data.files else []
                 message = f"Found {len(files)} files matching '{glob_pattern}'"
 
-            elif action_type == "file_upload":
-                file_content = action.get("file")
-                path = action.get("path")
-                if not file_content:
-                    raise ValueError("file_upload requires 'file' parameter")
-                if not path:
-                    raise ValueError("file_upload requires 'path' parameter")
-                # Note: SDK's upload_file expects a File object, but we're using write_file with base64 encoding as a workaround
-                result = self.sdk_client.file.write_file(
-                    file=path,
-                    content=file_content,
-                    encoding="base64"
-                )
-                message = f"Successfully uploaded file to {path}"
-                
-            elif action_type == "file_download":
-                path = action.get("path")
-                if not path:
-                    raise ValueError("file_download requires 'path' parameter")
-                download_data = b""
-                for chunk in self.sdk_client.file.download_file(path=path):
-                    download_data += chunk
-                message = f"Successfully downloaded file from {path} ({len(download_data)} bytes)"
-                
             elif action_type == "str_replace_editor":
                 from agent_sandbox.file.types import Command
                 command = action.get("command")
