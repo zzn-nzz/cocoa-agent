@@ -4,7 +4,7 @@ Decrypt task files for local viewing/editing.
 
 Usage:
     python decrypt_tasks.py --task my-task     # Decrypt a specific task
-    python decrypt_tasks.py                    # Decrypt all tasks in contributed-tasks/
+    python decrypt_tasks.py                    # Decrypt all tasks in cocoabench-head/
     
 This will decrypt:
 - instruction.md.enc -> instruction.md
@@ -23,7 +23,7 @@ from pathlib import Path
 # Get paths relative to this script
 script_dir = Path(__file__).parent
 project_root = script_dir.parent
-tasks_dir = project_root / "contributed-tasks"
+tasks_dir = project_root / "cocoabench-head"
 
 
 def derive_key(password: str, length: int) -> bytes:
