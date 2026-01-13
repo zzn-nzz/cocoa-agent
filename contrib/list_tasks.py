@@ -65,10 +65,10 @@ def main():
                        help='Show statistics')
     args = parser.parse_args()
 
-    # Scripts are in contrib/, contributed tasks are in parent/contributed-tasks/
+    # Scripts are in contrib/, contributed tasks are in parent/cocoabench-head/
     script_dir = Path(__file__).parent.resolve()
     project_root = script_dir.parent
-    tasks_dir = project_root / 'contributed-tasks'
+    tasks_dir = project_root / 'cocoabench-head'
     
     all_tasks = list_all_tasks(tasks_dir)
     filtered_tasks = filter_tasks(all_tasks, args.stage)

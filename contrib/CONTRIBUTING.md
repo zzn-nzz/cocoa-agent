@@ -73,12 +73,12 @@ cd contrib
 ```bash
 python create_task.py
 ```
-The wizard will guide you through creating all required files and save them to `contributed-tasks/your-task-name/`.
+The wizard will guide you through creating all required files and save them to `cocoabench-head/your-task-name/`.
 
 **Option B: Create files manually**
 
 ```bash
-mkdir -p ../contributed-tasks/your-task-name
+mkdir -p ../cocoabench-head/your-task-name
 ```
 
 Then create these files in your task folder:
@@ -132,7 +132,7 @@ You're ready to share your work! 🎉
 
 ```bash
 git checkout -b task/your-task-name
-git add contributed-tasks/your-task-name/
+git add cocoabench-head/your-task-name/
 git commit -m "Add task: your-task-name"
 git push origin task/your-task-name
 ```
@@ -168,11 +168,11 @@ Thanks for contributing — we really appreciate it! 🙏
 
 ## Task Structure
 
-Your contributed tasks will go in the `contributed-tasks/` folder. (The `cocoabench-example-tasks/` folder contains reference examples you can learn from.)
+Your contributed tasks will go in the `cocoabench-head/` folder. (The `cocoabench-example-tasks/` folder contains reference examples you can learn from.)
 
 **Before encryption:**
 ```
-contributed-tasks/
+cocoabench-head/
 └── your-task-name/
     ├── instruction.md        # Task instruction (required)
     ├── evaluation.md         # Evaluation criteria (required)
@@ -186,7 +186,7 @@ contributed-tasks/
 
 **After encryption (ready for PR):**
 ```
-contributed-tasks/
+cocoabench-head/
 └── your-task-name/
     ├── instruction.md.enc    # Encrypted instruction
     ├── evaluation.md.enc     # Encrypted evaluation

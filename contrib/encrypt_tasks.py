@@ -3,7 +3,7 @@
 Encrypt task files for safe contribution.
 
 Usage:
-    python encrypt_tasks.py                    # Encrypt all tasks in contributed-tasks/
+    python encrypt_tasks.py                    # Encrypt all tasks in cocoabench-head/
     python encrypt_tasks.py --task my-task     # Encrypt a specific task
     
 This will encrypt:
@@ -22,7 +22,7 @@ from pathlib import Path
 # Get paths relative to this script
 script_dir = Path(__file__).parent
 project_root = script_dir.parent
-tasks_dir = project_root / "contributed-tasks"
+tasks_dir = project_root / "cocoabench-head"
 
 
 def derive_key(password: str, length: int) -> bytes:

@@ -277,7 +277,7 @@ Reference: https://cocoabench.github.io/#examples
     # Determine paths
     script_dir = Path(__file__).parent.resolve()
     project_root = script_dir.parent
-    tasks_dir = project_root / 'contributed-tasks'
+    tasks_dir = project_root / 'cocoabench-head'
     
     task_data = {}
     total_steps = 7

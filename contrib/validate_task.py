@@ -396,10 +396,10 @@ def main():
                        help='Check that task files are properly encrypted')
     args = parser.parse_args()
     
-    # Scripts are in contrib/, contributed tasks are in parent/contributed-tasks/
+    # Scripts are in contrib/, contributed tasks are in parent/cocoabench-head/
     script_dir = Path(__file__).parent.resolve()
     project_root = script_dir.parent
-    tasks_dir = project_root / 'contributed-tasks'
+    tasks_dir = project_root / 'cocoabench-head'
     
     if args.all:
         # Validate all tasks
