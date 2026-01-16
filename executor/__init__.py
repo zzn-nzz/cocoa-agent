@@ -17,7 +17,7 @@ from .utils import colorize, extract_config_info, measure_execution_time
 
 # Import decrypt utilities for encrypted test files
 try:
-    from decrypt_utils import decrypt_file_to_memory, read_canary
+    from decrypt import decrypt_file_to_memory, read_canary
     DECRYPT_AVAILABLE = True
 except ImportError:
     DECRYPT_AVAILABLE = False
@@ -403,7 +403,7 @@ class TaskExecutor:
             if use_encrypted:
                 # Handle encrypted test file - decrypt to memory only
                 if not DECRYPT_AVAILABLE:
-                    raise ImportError("decrypt_utils not available but use_encrypted=True")
+                    raise ImportError("decrypt module not available but use_encrypted=True")
                 
                 # Read canary from task directory
                 task_dir = Path(task.get("task_dir"))
